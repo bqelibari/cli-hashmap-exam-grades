@@ -14,54 +14,42 @@ from hash_map import HashMap
 
 
 def course_statistics(filepath: str):
-    """
-    Analyzes the course grades file at <filepath>, calculates the
-    number of students per course, the avg. passing grade, and the
-    percentage of students who failed the course. The result is
-    printed to stdout, ordered by semester in descending manner.
-
-    The format for printing is as follows:
-
-    <semester>\t<course_name>\t<num_students>\t<avg_grade>\t<fail_quote>\n
-
-    """
-
-    """
-    test wurde entfernt, da course_grades und test.tsv unterschiedliche
-    formate haben. Mein code trennt die einzelnen zeilen nach dem
-    ersten tab von rechts. Da der aufbau der dateien so unterschiedlich ist,
-    kann der test nicht durchgehen. ich hoffe dass das format von
-    course_grades das richtige ist, da auch auf dem übungsblatt steht dass
-    diese datei eingelesen werden soll.
-    """
     str_list = open_file_and_read_contents()
     sorted_str_list = sort_list(str_list)
     list_of_string_lists = separate_str_at_second_tab(sorted_str_list)
+
     len_hash_map = determine_hash_map_length(list_of_string_lists)
 
     mapping = HashMap(len_hash_map)
     insert_data_into_hash_map(mapping, list_of_string_lists)
-    sorted_key_value_lists = sorted(mapping.hash_map, reverse=True)
+    sorted_key_value_lists = mapping.key_value_pairs()
+    module_name = sorted_key_value_lists[0][0]
+
+    module_grades = []
     for module in sorted_key_value_lists:
-        print_module_info(module)
-
-
-def print_module_info(module):
-    participants = len(module[1])
-    passed = 0
-    sum_of_grades = 0
-    failed_exams = 0
-    for grade in module[1]:
-        if grade == '5.0':
-            failed_exams += 1
+        if module[0] == module_name:
+            grade = float(module[1])
+            module_grades.append(grade)
         else:
-            passed += 1
-            sum_of_grades += float(grade)
-    module[0].replace('\t', "\t", 1)
-    sys.stdout.write(
-        module[0] + "\t" + str(participants) + "\t" +
-        str(round((sum_of_grades / passed), 2)) + "\t" +
-        str(round((failed_exams / participants) * 100, 1)) + "\n")
+            module_name = module[0]
+            calculate_module_info(module_grades, module_name)
+            module_grades = []
+
+
+def calculate_module_info(module_grades, module_name):
+    participants = len(module_grades)
+    sum_of_grades = 0
+    failed_exams = module_grades.count(5.0)
+    passed_exams = participants - failed_exams
+
+    for grade in module_grades:
+        if grade == 5.0:
+            break
+        sum_of_grades += grade
+
+    median = round((sum_of_grades / passed_exams), 2)
+    fail_percentage = round((failed_exams / participants) * 100, 1)
+    print_output(module_name, participants, median, fail_percentage)
 
 
 def open_file_and_read_contents():
@@ -91,16 +79,20 @@ def determine_hash_map_length(string_list):
     return len(key_set)
 
 
-def insert_data_into_hash_map(map, string_list):
-    """empty string as first element after sorting.
-    dataset is too big to determine if its my fault or if
-    the empty string was in the dataset by accident"""
-    for element in string_list[1:]:
-        map.insert(element[0], element[1])
+def insert_data_into_hash_map(hashmap, string_list):
+    for element in string_list:
+        hashmap.insert(element[0], element[1])
 
 
-def get_key_value_pairs(map):
-    return map.key_value_pairs()
+def get_key_value_pairs(hashmap):
+    return hashmap.key_value_pairs()
+
+
+def print_output(module_name, participants, median, fail_percentage):
+    sys.stdout.write(
+        module_name + "\t" + str(participants) + "\t" +
+        str(median) + "\t" +
+        str(fail_percentage) + "\n")
 
 
 if __name__ == '__main__':

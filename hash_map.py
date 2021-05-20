@@ -10,7 +10,7 @@ Niklas Schnelle <schnelle@cs.uni-freiburg.de>
 Patrick Brosi <brosi@cs.uni-freiburg.de>
 
 """
-from typing import List, Any, Tuple
+from typing import List, Any, Tuple, Optional
 
 
 class HashMap:
@@ -42,24 +42,32 @@ class HashMap:
         """
         hashed_key = self.key_hash(key)
         index = hashed_key % len(self.hash_map)
-        idx_count = index + 1
+        loop_index = index + 1
 
-        if self.hash_map[index][0] is None:
-            self.hash_map[index] = [key, [value]]
-        elif self.hash_map[index][0] == key:
-            self.hash_map[index][1].append(value)
+        key_at_index = self.hash_map[index][0]
+        key_at_loop_index = self.hash_map[loop_index][0]
+
+        if key_at_index is None:
+            self.insert_key_value_pair_if_key_not_found(index, key, value)
+        elif key_at_index == key:
+            self.append_value_if_key_exists(index, value)
         else:
-            while idx_count != index:
-                if idx_count == len(self.hash_map):
-                    idx_count = 0
-                if self.hash_map[idx_count][0] is None:  # field empty->replace
-                    self.hash_map[idx_count] = [key, [value]]
+            while loop_index != index:
+                if loop_index == len(self.hash_map):
+                    loop_index = 0
+                if key_at_loop_index is None:
+                    self.insert_key_value_pair_if_key_not_found(loop_index, key, value)
                     break
-                elif self.hash_map[idx_count][0] == key:  # field not empty
-                    self.hash_map[idx_count][1].append(value)
+                elif key_at_loop_index == key:
+                    self.append_value_if_key_exists(loop_index, value)
                     break
-                else:  # field not empty and keys dont match
-                    idx_count += 1
+                loop_index += 1
+
+    def insert_key_value_pair_if_key_not_found(self, idx: int, key: str, value: Any):
+        self.hash_map[idx] = [key, [value]]
+
+    def append_value_if_key_exists(self, index: int, value: Any):
+        self.hash_map[index][1].append(value)
 
     def lookup(self, key: str) -> Any:
 
@@ -81,7 +89,7 @@ class HashMap:
                 return element[1][-1]
         return None
 
-    def key_value_pairs(self) -> List[Tuple[str, Any]]:
+    def key_value_pairs(self) -> list[tuple[Optional[list[None]], None]]:
         """
         Get a list of all (key, value) pairs stored in the
         hash map. This can be used to iterate over the entire map.
@@ -103,7 +111,7 @@ class HashMap:
                 if field_in_hash_map != [None, [None]]:
                     result.append((field_in_hash_map[0],
                                    field_in_hash_map[1][value_idx]))
-        return sorted(result, key=lambda pair: pair[0])
+        return sorted(result, key=lambda pair: pair[0], reverse=True)
 
     @staticmethod
     def key_hash(key: str) -> int:
